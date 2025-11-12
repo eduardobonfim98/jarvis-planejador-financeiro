@@ -8,13 +8,15 @@ from dotenv import load_dotenv
 from telegram import Update
 from telegram.ext import Application, CommandHandler, MessageHandler, filters, ContextTypes
 
+from database import init_database, save_message
+
 # Carrega variáveis de ambiente
 load_dotenv()
 
 # Tokens
 BOT_TOKEN = os.getenv("TELEGRAM_BOT_TOKEN")
 GEMINI_API_KEY = os.getenv("GEMINI_API_KEY")
-GEMINI_MODEL_NAME = os.getenv("GEMINI_MODEL", "gemini-2.5-flash")
+GEMINI_MODEL_NAME = os.getenv("GEMINI_MODEL", "gemini-2.5-flash-lite")
 
 if not BOT_TOKEN:
     raise ValueError("⚠️ TELEGRAM_BOT_TOKEN não encontrado! Crie um arquivo .env com seu token.")
@@ -49,6 +51,13 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
 async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
     """Processa mensagens com inteligência artificial."""
     user_message = update.message.text
+    user_id = str(update.effective_user.id)
+
+    # Registra interação básica no banco
+    try:
+        save_message(user_id, user_message)
+    except Exception as db_error:
+        print(f"⚠️ Não foi possível salvar a mensagem no banco: {db_error}")
 
     # Mostra que está processando
     await update.message.reply_chat_action("typing")
@@ -92,6 +101,9 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
 def main():
     """Inicia o bot."""
     print("🤖 Iniciando bot do Telegram...")
+
+    # Garante que o banco está pronto
+    init_database()
     
     # Cria a aplicação
     application = Application.builder().token(BOT_TOKEN).build()

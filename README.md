@@ -28,6 +28,17 @@ GEMINI_API_KEY=yyy
 
 O `.env` já está no `.gitignore` para evitar leaks.
 
+## 💾 Banco de dados
+
+- O projeto utiliza SQLite (`jarvis.db` na raiz por padrão).
+- A inicialização das tabelas acontece automaticamente quando o bot inicia (`init_database()`).
+- Para usar outro caminho, defina `DATABASE_PATH` no `.env`.
+
+Exemplo:
+```
+DATABASE_PATH=/absolute/path/jarvis.db
+```
+
 ## ▶️ Rodando o bot
 
 ```bash
@@ -51,7 +62,6 @@ uv sync
 
 ## ✅ Próximos passos
 
-- Implementar persistência (SQLite).
 - Criar agents/tools descritos em `Projeto.md`.
 - Adicionar testes automatizados e linting conforme evoluir.
 
