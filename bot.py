@@ -1,27 +1,36 @@
 """Bot do Telegram - Jarvis."""
+import asyncio
 import os
+from functools import partial
+
+import google.generativeai as genai
 from dotenv import load_dotenv
 from telegram import Update
 from telegram.ext import Application, CommandHandler, MessageHandler, filters, ContextTypes
-from openai import OpenAI
 
 # Carrega variáveis de ambiente
 load_dotenv()
 
 # Tokens
 BOT_TOKEN = os.getenv("TELEGRAM_BOT_TOKEN")
-OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
+GEMINI_API_KEY = os.getenv("GEMINI_API_KEY")
+GEMINI_MODEL_NAME = os.getenv("GEMINI_MODEL", "gemini-2.5-flash")
 
 if not BOT_TOKEN:
     raise ValueError("⚠️ TELEGRAM_BOT_TOKEN não encontrado! Crie um arquivo .env com seu token.")
 
-# Cliente OpenAI (opcional - se não tiver API key, usa resposta simples)
-if OPENAI_API_KEY:
-    client = OpenAI(api_key=OPENAI_API_KEY)
-    print("✅ OpenAI configurado - Bot usando inteligência artificial!")
+# Cliente Gemini (opcional - se não tiver API key, usa resposta simples)
+if GEMINI_API_KEY:
+    try:
+        genai.configure(api_key=GEMINI_API_KEY)
+        gemini_model = genai.GenerativeModel(GEMINI_MODEL_NAME)
+        print(f"✅ Gemini configurado ({GEMINI_MODEL_NAME}) - Bot usando inteligência artificial!")
+    except Exception as exc:
+        gemini_model = None
+        print(f"❌ Erro ao configurar Gemini: {exc}")
 else:
-    client = None
-    print("⚠️ OPENAI_API_KEY não encontrado - Bot usando respostas simples")
+    gemini_model = None
+    print("⚠️ GEMINI_API_KEY não encontrado - Bot usando respostas simples")
 
 
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
@@ -40,37 +49,37 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
 async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
     """Processa mensagens com inteligência artificial."""
     user_message = update.message.text
-    user_id = update.effective_user.id
-    
+
     # Mostra que está processando
     await update.message.reply_chat_action("typing")
     
-    if client:
-        # Usa OpenAI para gerar resposta inteligente
+    if gemini_model:
+        # Usa Gemini para gerar resposta inteligente
         try:
-            response = client.chat.completions.create(
-                model="gpt-4o-mini",
-                messages=[
-                    {
-                        "role": "system",
-                        "content": "Você é o Jarvis, um assistente financeiro pessoal amigável e útil. "
-                                 "Você ajuda pessoas a controlar seus gastos através do WhatsApp/Telegram. "
-                                 "Seja empático, direto e sempre ofereça ajuda prática."
-                    },
-                    {
-                        "role": "user",
-                        "content": user_message
-                    }
-                ],
-                temperature=0.7,
-                max_tokens=200
+            prompt = (
+                "Você é o Jarvis, um assistente financeiro pessoal amigável e útil. "
+                "Ajude o usuário a controlar gastos, responder perguntas de finanças pessoais e "
+                "oferecer apoio prático. Seja empático, direto e objetivo nas orientações.\n\n"
+                f"Mensagem do usuário: {user_message}"
             )
-            
-            bot_response = response.choices[0].message.content
+
+            loop = asyncio.get_running_loop()
+            response = await loop.run_in_executor(
+                None,
+                partial(gemini_model.generate_content, prompt)
+            )
+
+            bot_response = (getattr(response, "text", "") or "").strip()
+            if not bot_response:
+                bot_response = (
+                    "Não consegui gerar uma resposta agora. "
+                    "Pode repetir a pergunta?"
+                )
+
             await update.message.reply_text(bot_response)
-            
+
         except Exception as e:
-            print(f"❌ Erro ao chamar OpenAI: {e}")
+            print(f"❌ Erro ao chamar Gemini: {e}")
             await update.message.reply_text(
                 "Desculpe, estou com problemas técnicos agora. "
                 "Tente novamente em alguns instantes!"
