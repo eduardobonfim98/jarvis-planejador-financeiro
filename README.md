@@ -73,7 +73,7 @@ Assistente financeiro conversacional inteligente desenvolvido com arquitetura mu
 
 ### Dependências Principais
 
-```toml
+```text
 python-telegram-bot==20.7      # Cliente Telegram Bot API
 langgraph>=0.2.0                # Orquestração de agentes
 langchain-core>=0.3.0          # Componentes base do LangChain
