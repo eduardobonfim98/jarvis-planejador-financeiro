@@ -605,6 +605,8 @@ WHERE r.user_phone = ? AND r.active = 1
 
 ## 🚀 Instalação
 
+> **⚠️ Importante**: Este projeto não inclui tokens ou chaves de API pré-configuradas por questões de segurança e privacidade. Você precisará criar seu próprio bot no Telegram e obter sua própria chave de API do Google Gemini. As instruções abaixo explicam como fazer isso passo a passo.
+
 ### Pré-requisitos
 
 - Python 3.11 ou superior
