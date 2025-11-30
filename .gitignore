@@ -2,7 +2,7 @@
 .venv/
 __pycache__/
 *.pyc
-*.db
 *.db-journal
 plots/
 notebooks/.ipynb_checkpoints/
+.DS_Store

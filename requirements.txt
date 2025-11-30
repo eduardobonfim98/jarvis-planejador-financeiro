@@ -1,3 +1,0 @@
-# As dependências agora são gerenciadas via UV (pyproject.toml / uv.lock).
-# Para instalar, execute:
-#   uv sync

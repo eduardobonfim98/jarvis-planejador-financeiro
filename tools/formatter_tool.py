@@ -82,7 +82,7 @@ class FormatterTool:
                          expense_description, created_at, category_name
             
         Returns:
-            String formatada com a lista de transações
+            String formatada com a lista de transações (inclui data e horário)
         """
         if not transactions:
             return "Nenhuma transação encontrada."
@@ -90,14 +90,46 @@ class FormatterTool:
         lines = ["📋 *Transações:*\n"]
         
         for t in transactions:
-            date = datetime.fromisoformat(t['created_at']) if isinstance(t['created_at'], str) else t['created_at']
-            date_str = FormatterTool.format_date(date)
+            # Converte created_at para datetime se for string
+            created_at = t.get('created_at')
+            if created_at is None:
+                continue
+                
+            if isinstance(created_at, str):
+                # Tenta parsear como ISO format primeiro
+                try:
+                    date = datetime.fromisoformat(created_at.replace('Z', '+00:00'))
+                except:
+                    # Se falhar, tenta outros formatos comuns do SQLite
+                    try:
+                        # Formato: YYYY-MM-DD HH:MM:SS
+                        date = datetime.strptime(created_at, '%Y-%m-%d %H:%M:%S')
+                    except:
+                        try:
+                            # Formato: YYYY-MM-DD HH:MM:SS.ffffff
+                            date = datetime.strptime(created_at, '%Y-%m-%d %H:%M:%S.%f')
+                        except:
+                            # Último recurso: tenta parsear como date apenas
+                            try:
+                                date = datetime.strptime(created_at, '%Y-%m-%d')
+                            except:
+                                # Se tudo falhar, usa data atual
+                                date = datetime.now()
+            elif isinstance(created_at, datetime):
+                date = created_at
+            else:
+                # Se for outro tipo, usa data atual
+                date = datetime.now()
+            
+            # Formata data e horário
+            datetime_str = FormatterTool.format_datetime(date)
             amount_str = FormatterTool.format_currency(t['amount'])
             category = t.get('category_name', 'Sem categoria')
+            description = t.get('expense_description', 'Sem descrição')
             
             lines.append(
-                f"• {date_str} - {amount_str}\n"
-                f"  {t['expense_description']} ({category})"
+                f"• {datetime_str} - {amount_str}\n"
+                f"  {description} ({category})"
             )
         
         return "\n".join(lines)
